@@ -1,0 +1,28 @@
+# Build artifacts
+.gradle/
+build/
+app/build/
+*.iml
+
+# IDE settings
+.idea/
+*.ipr
+*.iws
+
+# User-specific files
+local.properties
+.DS_Store
+
+# Log files
+*.log
+
+# Android-specific
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Secrets
+google-services.json
+
+# Room schemas (if you want to exclude them, though usually it's better to keep them)
+# app/schemas/
