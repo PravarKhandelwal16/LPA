@@ -24,17 +24,28 @@ class TelephonyRepository @Inject constructor(
 ) {
 
     /**
-     * Gets the overall device telephony and eSIM status.
+     * Gets the overall device telephony and eSIM status by querying the real
+     * hardware APIs through [euiccManagerWrapper] and [subscriptionHandler].
      */
     suspend fun getDeviceTelephonyStatus(): Result<DeviceStatus> {
-        // Placeholder: Will orchestrate calls to EuiccManagerWrapper
-        // and map the result to the domain DeviceStatus model.
+        val isSupported = euiccManagerWrapper.isEsimSupported()
+        val isAvailable = euiccManagerWrapper.isEuiccAvailable()
+        val activeEmbedded = subscriptionHandler.getActiveEmbeddedSubscriptions()
+
+        val activeProfileName = activeEmbedded
+            .firstOrNull()
+            ?.let { info ->
+                // Prefer the display name; fall back to carrier name if blank.
+                info.displayName?.toString()?.takeIf { it.isNotBlank() }
+                    ?: info.carrierName?.toString()
+            }
+
         return Result.Success(
             DeviceStatus(
-                isEsimSupported = false,
-                isEuiccAvailable = false,
-                activeProfileName = null,
-                totalProfiles = 0
+                isEsimSupported = isSupported,
+                isEuiccAvailable = isAvailable,
+                activeProfileName = activeProfileName,
+                totalProfiles = activeEmbedded.size
             )
         )
     }

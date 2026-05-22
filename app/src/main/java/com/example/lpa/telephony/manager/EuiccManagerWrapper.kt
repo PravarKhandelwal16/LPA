@@ -1,30 +1,43 @@
 package com.example.lpa.telephony.manager
 
+import android.content.Context
+import android.telephony.euicc.EuiccManager
 import com.example.lpa.core.result.Result
 import com.example.lpa.domain.models.EsimProfile
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Wrapper for the Android framework [android.telephony.euicc.EuiccManager].
+ * Wrapper for the Android framework [EuiccManager].
  *
  * Provides a coroutine-safe, mockable boundary between the app's business
  * logic and the system-level eSIM APIs. All actual `EuiccManager` method calls
  * should be contained within this class.
  *
- * **Note:** This is currently a placeholder architecture. Real eUICC
- * system calls will be implemented here later.
+ * @param context Application context used to obtain the [EuiccManager] system service.
  */
 @Singleton
-class EuiccManagerWrapper @Inject constructor() {
+class EuiccManagerWrapper @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
+
+    /** Lazily obtained [EuiccManager]. Null on devices that lack eSIM hardware. */
+    private val euiccManager: EuiccManager? by lazy {
+        context.getSystemService(Context.EUICC_SERVICE) as? EuiccManager
+    }
 
     /**
-     * Checks if the device hardware supports eSIM and if the eUICC chip is available.
+     * Returns true if the device has eSIM hardware (i.e., [EuiccManager] is available).
+     * This does NOT guarantee the chip is enabled or ready.
      */
-    suspend fun isEuiccAvailable(): Boolean {
-        // Placeholder: will call euiccManager.isEnabled
-        return false
-    }
+    fun isEsimSupported(): Boolean = euiccManager != null
+
+    /**
+     * Returns true if the eUICC chip is present **and** currently enabled.
+     * Safe to call from any thread.
+     */
+    fun isEuiccAvailable(): Boolean = euiccManager?.isEnabled == true
 
     /**
      * Retrieves the list of profiles currently installed on the eUICC.
