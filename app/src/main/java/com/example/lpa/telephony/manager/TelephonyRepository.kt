@@ -48,6 +48,17 @@ class TelephonyRepository @Inject constructor(
     }
 
     /**
+     * Retrieves the list of profiles currently installed on the eUICC.
+     */
+    fun getInstalledProfiles(): Result<List<EsimProfile>> {
+        return try {
+            Result.Success(subscriptionHandler.getAllEsimProfiles())
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    /**
      * Orchestrates downloading a profile and optionally activating it immediately.
      */
     suspend fun provisionNewProfile(activationCode: String, activateNow: Boolean): Result<Unit> {

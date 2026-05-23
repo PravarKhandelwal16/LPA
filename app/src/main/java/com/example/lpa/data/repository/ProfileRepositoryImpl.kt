@@ -3,8 +3,10 @@ package com.example.lpa.data.repository
 import com.example.lpa.core.result.Result
 import com.example.lpa.data.datasource.EsimProfileLocalDataSource
 import com.example.lpa.data.mapper.toDomainList
+import com.example.lpa.data.mapper.toEntity
 import com.example.lpa.domain.models.EsimProfile
 import com.example.lpa.domain.repository.ProfileRepository
+import com.example.lpa.telephony.manager.TelephonyRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -26,7 +28,8 @@ import javax.inject.Inject
  * @param localDataSource  Hilt-injected local data source for profile persistence.
  */
 class ProfileRepositoryImpl @Inject constructor(
-    private val localDataSource: EsimProfileLocalDataSource
+    private val localDataSource: EsimProfileLocalDataSource,
+    private val telephonyRepository: TelephonyRepository
 ) : ProfileRepository {
 
     /**
@@ -41,19 +44,16 @@ class ProfileRepositoryImpl @Inject constructor(
 
     /**
      * Triggers a refresh of profile data from the eUICC.
-     *
-     * Currently a no-op stub. Replace with:
-     * ```kotlin
-     * val profiles = euiccManagerWrapper.getProfiles()  // returns List<EsimProfile>
-     * val entities = profiles.map { it.toEntity() }
-     * profileDao.deleteAll()
-     * profileDao.insertAll(entities)
-     * return Result.Success(Unit)
-     * ```
-     * The [observeProfiles] Flow will re-emit after [insertAll] automatically.
      */
     override suspend fun refreshProfiles(): Result<Unit> {
-        // TODO: replace with EuiccManagerWrapper.getProfiles() + DAO upsert
-        return Result.Success(Unit)
+        return when (val result = telephonyRepository.getInstalledProfiles()) {
+            is Result.Success -> {
+                val entities = result.data.map { it.toEntity() }
+                localDataSource.replaceAll(entities)
+                Result.Success(Unit)
+            }
+            is Result.Error -> Result.Error(result.exception)
+            Result.Loading -> Result.Loading
+        }
     }
 }

@@ -4,6 +4,8 @@ import android.content.Context
 import android.telephony.SubscriptionInfo
 import android.telephony.SubscriptionManager
 import com.example.lpa.core.result.Result
+import com.example.lpa.domain.models.EsimProfile
+import com.example.lpa.domain.models.ProfileState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -84,6 +86,37 @@ class SubscriptionHandler @Inject constructor(
         } catch (e: SecurityException) {
             // READ_PHONE_STATE not granted at runtime — degrade gracefully.
             null
+        }
+    }
+
+    /**
+     * Returns a list of all eSIM profiles installed on the device.
+     * Maps [SubscriptionInfo] to domain [EsimProfile].
+     *
+     * @return List of [EsimProfile], or empty list on [SecurityException].
+     */
+    fun getAllEsimProfiles(): List<EsimProfile> {
+        return try {
+            val allSubscriptions = subscriptionManager.allSubscriptionInfoList ?: emptyList()
+            val activeSubscriptions = subscriptionManager.activeSubscriptionInfoList ?: emptyList()
+            val activeIccIds = activeSubscriptions.map { it.iccId }.toSet()
+
+            allSubscriptions
+                .filter { it.isEmbedded }
+                .map { info ->
+                    EsimProfile(
+                        iccId = info.iccId ?: "",
+                        nickname = info.displayName?.toString() ?: "Unknown",
+                        serviceProvider = info.carrierName?.toString() ?: "Unknown",
+                        state = if (activeIccIds.contains(info.iccId)) {
+                            ProfileState.ENABLED
+                        } else {
+                            ProfileState.DISABLED
+                        }
+                    )
+                }
+        } catch (e: SecurityException) {
+            emptyList()
         }
     }
 

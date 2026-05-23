@@ -30,6 +30,7 @@ class ProfilesViewModel @Inject constructor(
 
     init {
         observeProfiles()
+        refresh()
     }
 
     // ── Public Actions ────────────────────────────────────────────────────────
