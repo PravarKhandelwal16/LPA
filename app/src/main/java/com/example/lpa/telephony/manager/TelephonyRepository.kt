@@ -28,26 +28,23 @@ class TelephonyRepository @Inject constructor(
      * hardware APIs through [euiccManagerWrapper] and [subscriptionHandler].
      */
     suspend fun getDeviceTelephonyStatus(): Result<DeviceStatus> {
-        val isSupported = euiccManagerWrapper.isEsimSupported()
-        val isAvailable = euiccManagerWrapper.isEuiccAvailable()
-        val activeEmbedded = subscriptionHandler.getActiveEmbeddedSubscriptions()
+        return try {
+            val supported = euiccManagerWrapper.isEsimSupported()
+            val available = euiccManagerWrapper.isEuiccAvailable()
+            val count = subscriptionHandler.getEsimProfileCount()
+            val active = subscriptionHandler.getActiveEsimSubscription()
 
-        val activeProfileName = activeEmbedded
-            .firstOrNull()
-            ?.let { info ->
-                // Prefer the display name; fall back to carrier name if blank.
-                info.displayName?.toString()?.takeIf { it.isNotBlank() }
-                    ?: info.carrierName?.toString()
-            }
-
-        return Result.Success(
-            DeviceStatus(
-                isEsimSupported = isSupported,
-                isEuiccAvailable = isAvailable,
-                activeProfileName = activeProfileName,
-                totalProfiles = activeEmbedded.size
+            Result.Success(
+                DeviceStatus(
+                    isEsimSupported = supported,
+                    isEuiccAvailable = available,
+                    activeProfileName = active?.displayName?.toString(),
+                    totalProfiles = count
+                )
             )
-        )
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
     }
 
     /**

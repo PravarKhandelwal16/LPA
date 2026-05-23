@@ -47,6 +47,47 @@ class SubscriptionHandler @Inject constructor(
     }
 
     /**
+     * Returns the total number of eSIM profiles installed on the device,
+     * regardless of whether they are currently active.
+     *
+     * Uses [SubscriptionManager.getAllSubscriptionInfoList] and filters for
+     * embedded entries. Requires [android.Manifest.permission.READ_PHONE_STATE].
+     *
+     * @return Count of installed eSIM profiles, or 0 on [SecurityException].
+     */
+    suspend fun getEsimProfileCount(): Int {
+        return try {
+            SubscriptionManager.from(context)
+                .allSubscriptionInfoList
+                ?.count { it.isEmbedded }
+                ?: 0
+        } catch (e: SecurityException) {
+            // READ_PHONE_STATE not granted at runtime — degrade gracefully.
+            0
+        }
+    }
+
+    /**
+     * Returns the first currently active eSIM subscription, or `null` if none
+     * is active or the permission is not granted.
+     *
+     * Uses [SubscriptionManager.getActiveSubscriptionInfoList] and filters for
+     * embedded entries. Requires [android.Manifest.permission.READ_PHONE_STATE].
+     *
+     * @return The first active embedded [SubscriptionInfo], or `null`.
+     */
+    suspend fun getActiveEsimSubscription(): SubscriptionInfo? {
+        return try {
+            subscriptionManager.activeSubscriptionInfoList
+                ?.filter { it.isEmbedded }
+                ?.firstOrNull()
+        } catch (e: SecurityException) {
+            // READ_PHONE_STATE not granted at runtime — degrade gracefully.
+            null
+        }
+    }
+
+    /**
      * Gets the active subscription ID for a given ICCID.
      */
     suspend fun getSubscriptionId(iccId: String): Int? {

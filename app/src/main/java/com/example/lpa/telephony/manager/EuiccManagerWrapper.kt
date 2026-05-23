@@ -28,16 +28,17 @@ class EuiccManagerWrapper @Inject constructor(
     }
 
     /**
-     * Returns true if the device has eSIM hardware (i.e., [EuiccManager] is available).
+     * Returns true if the device has eSIM hardware by querying [android.content.pm.PackageManager].
      * This does NOT guarantee the chip is enabled or ready.
      */
-    fun isEsimSupported(): Boolean = euiccManager != null
+    suspend fun isEsimSupported(): Boolean =
+        context.packageManager.hasSystemFeature("android.hardware.telephony.euicc")
 
     /**
      * Returns true if the eUICC chip is present **and** currently enabled.
      * Safe to call from any thread.
      */
-    fun isEuiccAvailable(): Boolean = euiccManager?.isEnabled == true
+    suspend fun isEuiccAvailable(): Boolean = euiccManager?.isEnabled ?: false
 
     /**
      * Retrieves the list of profiles currently installed on the eUICC.
