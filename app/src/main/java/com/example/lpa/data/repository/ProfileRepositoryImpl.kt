@@ -5,6 +5,8 @@ import com.example.lpa.data.datasource.EsimProfileLocalDataSource
 import com.example.lpa.data.mapper.toDomainList
 import com.example.lpa.data.mapper.toEntity
 import com.example.lpa.domain.models.EsimProfile
+import com.example.lpa.domain.models.LogLevel
+import com.example.lpa.domain.repository.LogRepository
 import com.example.lpa.domain.repository.ProfileRepository
 import com.example.lpa.telephony.manager.TelephonyRepository
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +31,8 @@ import javax.inject.Inject
  */
 class ProfileRepositoryImpl @Inject constructor(
     private val localDataSource: EsimProfileLocalDataSource,
-    private val telephonyRepository: TelephonyRepository
+    private val telephonyRepository: TelephonyRepository,
+    private val logRepository: LogRepository
 ) : ProfileRepository {
 
     /**
@@ -54,6 +57,38 @@ class ProfileRepositoryImpl @Inject constructor(
             }
             is Result.Error -> Result.Error(result.exception)
             Result.Loading -> Result.Loading
+        }
+    }
+
+    override suspend fun switchProfile(iccId: String): Result<Unit> {
+        logRepository.addLog("Switching to profile: $iccId", LogLevel.INFO)
+        return when (val result = telephonyRepository.switchProfile(iccId)) {
+            is Result.Success -> {
+                logRepository.addLog("Successfully switched to profile: $iccId", LogLevel.INFO)
+                // Optimistically update local state if ICCID is known
+                localDataSource.findByIccId(iccId)?.let { entity ->
+                    localDataSource.setActive(entity.id)
+                }
+                // Refresh local state from system for final consistency
+                refreshProfiles()
+            }
+            is Result.Error -> {
+                logRepository.addLog("Failed to switch to profile: $iccId. Error: ${result.exception.message}", LogLevel.ERROR)
+                Result.Error(result.exception)
+            }
+            Result.Loading -> Result.Loading
+        }
+    }
+
+    override suspend fun toggleProfile(iccId: String, enable: Boolean): Result<Unit> {
+        // For eSIM, enabling/disabling is typically done via switchToSubscription.
+        // If enable is true, we switch to it. If false, we switch to INVALID_SUBSCRIPTION_ID.
+        return if (enable) {
+            switchProfile(iccId)
+        } else {
+            // Passing an empty string to switchProfile can be interpreted as disabling 
+            // by the underlying EuiccManager (SubscriptionManager.INVALID_SUBSCRIPTION_ID)
+            switchProfile("")
         }
     }
 }

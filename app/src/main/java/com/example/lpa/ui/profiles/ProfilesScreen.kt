@@ -4,16 +4,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.SimCard
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.lpa.domain.models.EsimProfile
+import com.example.lpa.domain.models.ProfileState
 import com.example.lpa.ui.theme.PrismEsimLpaTheme
 
 /**
@@ -58,7 +63,8 @@ fun ProfilesScreen(
             is ProfilesUiState.Empty   -> ProfilesEmptyContent(onRefresh = viewModel::refresh)
             is ProfilesUiState.Success -> ProfilesSuccessContent(
                 state = state,
-                onRefresh = viewModel::refresh
+                onRefresh = viewModel::refresh,
+                onToggle = viewModel::toggleProfile
             )
             is ProfilesUiState.Error   -> ProfilesErrorContent(
                 message = state.message,
@@ -115,7 +121,8 @@ private fun ProfilesEmptyContent(onRefresh: () -> Unit) {
 @Composable
 private fun ProfilesSuccessContent(
     state: ProfilesUiState.Success,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onToggle: (String, Boolean) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -123,36 +130,66 @@ private fun ProfilesSuccessContent(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(state.profiles, key = { it.iccId }) { profile ->
-            ProfileCard(profile = profile)
+            ProfileCard(
+                profile = profile,
+                onToggle = { enable -> onToggle(profile.iccId, enable) },
+                enabled = !state.isRefreshing
+            )
         }
     }
 }
 
 @Composable
-private fun ProfileCard(profile: EsimProfile) {
+private fun ProfileCard(
+    profile: EsimProfile,
+    onToggle: (Boolean) -> Unit,
+    enabled: Boolean
+) {
     Card(
-        modifier = Modifier,
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = profile.nickname,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = profile.serviceProvider,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "State: ${profile.state.name}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = profile.nickname,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = profile.serviceProvider,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "State: ${profile.state.name}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (profile.state == ProfileState.ENABLED) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+
+            val isActive = profile.state == ProfileState.ENABLED
+            Button(
+                onClick = { onToggle(!isActive) },
+                enabled = enabled,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    if (isActive) "Disable" else "Enable",
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
         }
     }
 }

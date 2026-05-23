@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EMBEDDED_SUBSCRIPTIONS" />
 
     <uses-feature
         android:name="android.hardware.telephony"

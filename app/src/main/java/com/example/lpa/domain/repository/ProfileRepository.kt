@@ -32,4 +32,21 @@ interface ProfileRepository {
      * @return [Result.Success] on success, [Result.Error] on failure.
      */
     suspend fun refreshProfiles(): Result<Unit>
+
+    /**
+     * Switches the active eSIM profile to the one with the given ICCID.
+     *
+     * @param iccId The ICCID of the profile to activate.
+     * @return [Result.Success] on success, [Result.Error] on failure.
+     */
+    suspend fun switchProfile(iccId: String): Result<Unit>
+
+    /**
+     * Toggles the state of a specific eSIM profile (enable/disable).
+     *
+     * @param iccId The ICCID of the profile to toggle.
+     * @param enable True to enable, false to disable.
+     * @return [Result.Success] on success, [Result.Error] on failure.
+     */
+    suspend fun toggleProfile(iccId: String, enable: Boolean): Result<Unit>
 }

@@ -123,9 +123,14 @@ class SubscriptionHandler @Inject constructor(
     /**
      * Gets the active subscription ID for a given ICCID.
      */
-    suspend fun getSubscriptionId(iccId: String): Int? {
-        // Placeholder: Will map ICCID to Subscription ID using SubscriptionManager
-        return null
+    fun getSubscriptionId(iccId: String): Int? {
+        return try {
+            subscriptionManager.allSubscriptionInfoList
+                ?.find { it.iccId == iccId }
+                ?.subscriptionId
+        } catch (e: SecurityException) {
+            null
+        }
     }
 
     /**

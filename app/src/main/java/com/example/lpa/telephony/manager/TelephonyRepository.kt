@@ -59,6 +59,13 @@ class TelephonyRepository @Inject constructor(
     }
 
     /**
+     * Switches the active eSIM profile to the one with the given ICCID.
+     */
+    suspend fun switchProfile(iccId: String): Result<Unit> {
+        return euiccManagerWrapper.switchProfile(iccId)
+    }
+
+    /**
      * Orchestrates downloading a profile and optionally activating it immediately.
      */
     suspend fun provisionNewProfile(activationCode: String, activateNow: Boolean): Result<Unit> {

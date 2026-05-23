@@ -1,12 +1,17 @@
 package com.example.lpa.data.repository
 
 import com.example.lpa.core.result.Result
+import com.example.lpa.data.local.entity.LpaLogEntryEntity
 import com.example.lpa.data.local.dao.LpaLogEntryDao
 import com.example.lpa.data.mapper.toDomainList
+import com.example.lpa.domain.models.LogLevel
 import com.example.lpa.domain.models.LpaLogEntry
 import com.example.lpa.domain.repository.LogRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -41,6 +46,22 @@ class LogRepositoryImpl @Inject constructor(
             val cutoffMillis = System.currentTimeMillis() -
                 TimeUnit.DAYS.toMillis(retentionDays.toLong())
             logDao.deleteOlderThan(cutoffMillis)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    override suspend fun addLog(operation: String, level: LogLevel, detail: String?): Result<Unit> {
+        return try {
+            val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US).format(Date())
+            val entity = LpaLogEntryEntity(
+                timestamp = timestamp,
+                operation = operation,
+                level = level.name,
+                detail = detail
+            )
+            logDao.insert(entity)
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e)

@@ -26,4 +26,14 @@ interface LogRepository {
      * @return [Result.Success] on success, [Result.Error] on failure.
      */
     suspend fun purgeLogs(retentionDays: Int): Result<Unit>
+
+    /**
+     * Adds a new log entry to the audit log.
+     *
+     * @param operation Human-readable description of the LPA operation.
+     * @param level     Severity level.
+     * @param detail    Optional additional context or stack trace snippet.
+     * @return [Result.Success] on success, [Result.Error] on failure.
+     */
+    suspend fun addLog(operation: String, level: com.example.lpa.domain.models.LogLevel, detail: String? = null): Result<Unit>
 }

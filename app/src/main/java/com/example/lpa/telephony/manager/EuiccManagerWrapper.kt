@@ -1,9 +1,13 @@
 package com.example.lpa.telephony.manager
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.telephony.SubscriptionManager
 import android.telephony.euicc.EuiccManager
 import com.example.lpa.core.result.Result
 import com.example.lpa.domain.models.EsimProfile
+import com.example.lpa.telephony.service.SubscriptionHandler
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,7 +23,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class EuiccManagerWrapper @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val subscriptionHandler: SubscriptionHandler
 ) {
 
     /** Lazily obtained [EuiccManager]. Null on devices that lack eSIM hardware. */
@@ -60,9 +65,40 @@ class EuiccManagerWrapper @Inject constructor(
     /**
      * Enables or disables a specific profile by its ICCID or Subscription ID.
      */
+    suspend fun switchProfile(iccId: String): Result<Unit> {
+        val manager = euiccManager ?: return Result.Error(IllegalStateException("EuiccManager not available"))
+        
+        val subId = if (iccId.isEmpty()) {
+            SubscriptionManager.INVALID_SUBSCRIPTION_ID
+        } else {
+            subscriptionHandler.getSubscriptionId(iccId) 
+                ?: SubscriptionManager.INVALID_SUBSCRIPTION_ID
+        }
+
+        return try {
+            // Create a PendingIntent for the callback. 
+            // In a production app, we'd register a BroadcastReceiver to listen for this.
+            val intent = Intent("com.example.lpa.ACTION_SWITCH_RESULT")
+            val callbackIntent = PendingIntent.getBroadcast(
+                context, 
+                0, 
+                intent, 
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            manager.switchToSubscription(subId, callbackIntent)
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    /**
+     * Enables or disables a specific profile by its ICCID or Subscription ID.
+     * @deprecated Use [switchProfile]
+     */
     suspend fun toggleProfile(iccId: String, enable: Boolean): Result<Unit> {
-        // Placeholder: will call euiccManager.switchToSubscription
-        return Result.Success(Unit)
+        return switchProfile(iccId)
     }
 
     /**
