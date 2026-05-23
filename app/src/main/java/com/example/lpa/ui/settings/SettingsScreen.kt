@@ -47,7 +47,7 @@ import com.example.lpa.ui.theme.PrismEsimLpaTheme
 @Composable
 fun SettingsScreen(
     paddingValues: PaddingValues = PaddingValues(),
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

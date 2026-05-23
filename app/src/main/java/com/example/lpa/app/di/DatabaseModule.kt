@@ -48,7 +48,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideLpaDatabase(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): LpaDatabase = Room.databaseBuilder(
         context,
         LpaDatabase::class.java,

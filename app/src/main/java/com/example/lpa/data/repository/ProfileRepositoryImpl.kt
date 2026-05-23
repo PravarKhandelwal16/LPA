@@ -13,7 +13,7 @@ import javax.inject.Inject
  * Production implementation of [ProfileRepository] backed by Room.
  *
  * Bridges the [EsimProfileLocalDataSource] (data layer) to the domain layer using the
- * mapper extensions in [com.example.lpa.data.mapper.EsimProfileMapper].
+ * mapper extensions in `com.example.lpa.data.mapper` (like `toDomain()`).
  *
  * The [observeProfiles] [Flow] is Room-backed — it automatically re-emits
  * whenever the `esim_profiles` table changes, so the UI stays in sync without

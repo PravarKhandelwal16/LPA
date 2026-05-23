@@ -43,7 +43,7 @@ import com.example.lpa.ui.theme.PrismEsimLpaTheme
 @Composable
 fun ProfilesScreen(
     paddingValues: PaddingValues = PaddingValues(),
-    viewModel: ProfilesViewModel = hiltViewModel()
+    viewModel: ProfilesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

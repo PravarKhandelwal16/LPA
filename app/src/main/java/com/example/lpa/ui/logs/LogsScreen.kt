@@ -47,7 +47,7 @@ import com.example.lpa.ui.theme.PrismEsimLpaTheme
 @Composable
 fun LogsScreen(
     paddingValues: PaddingValues = PaddingValues(),
-    viewModel: LogsViewModel = hiltViewModel()
+    viewModel: LogsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
